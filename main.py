@@ -1,79 +1,72 @@
 # Read the video stream from VOxI camera
 # through USB3 interface
 # and display the video with the frame rate
-# and min/max value in 14-bit range
+# min/max and mean value in the 14-bit range
 
 import cv2
 import numpy as np
 import time
+import utils as u
 
-# $$$$ NEW ADDITION $$$$
-# =======================
+
 # used to record the time when we processed last frame
 prev_frame_time = 0
 
 # used to record the time at which we processed current frame
 new_frame_time = 0
-# =======================
-# $$$$ END OF NEW ADDITION$$$$
 
-# creating the videocapture object
-# and reading from the live video camera
-# Change it to video filename if reading from a live camera
+# video statistics globals:
+sFps = 0   # frame rate string
+meanval = 0 # frame mean value
+minval = 0  # frame minimum value
+maxval = 0  # frame maximum value
+
+# seconds counter to be used for refreshing the stats data on the screen
+tic = time.time()
+toc = time.time()
+
+avg_window = 1024
+frm_time_list = [0]
 
 # Create a video capturing device instance
 # Comment for a video file
 cam0 = cv2.VideoCapture(0)
-# Uncomment for a video file and enter valid path
-# cam0 = cv2.VideoCapture("c:/Work/CS/AVT/AVT_New/engine-mode-deadpix-video.mp4")
 
 # Convert the captured image to RGB
 cam0.set(cv2.CAP_PROP_CONVERT_RGB, 0)
 
 # Video presentation infinite loop
-# while cam0.isOpened():
-while True:
+# Iterate as long as a video capturing device is opened,
+# the frame can be read or until 'Q' key is pressed
+while cam0.isOpened():
+    # get the current time
+    toc = time.time()
 
     # Read video frame
     s, img0 = cam0.read()
 
-    # $$$$ NEW ADDITION $$$$
-    # =======================
     # break if could not read the frame (e.g. end of video or camera goes offline
     if not s:
         break
 
-    # Uncomment for a video file
-    #img0 = cv2.resize(img0, (640, 480))
-
-    # font which will be esed to display FPS
-    font = cv2.FONT_HERSHEY_COMPLEX_SMALL
-    # time when we finish processing for this frame
+    # time when we finished the current frame acquisition
     new_frame_time = time.time()
 
-    # Calculating the fps
-
-    # fps will be number of frame processed in given time frame
-    # since their will be most of time error of 0.001 second
-    # we will be subtracting it to get more accurate result
+    # Calculating the fps and casting the result to int
+    # the condition is set to prevent the division by '0' error
     if not new_frame_time == prev_frame_time:
-        fps = 1 / (new_frame_time - prev_frame_time)
+        currfps = 1 / (new_frame_time - prev_frame_time)
 
+    # Call utils.moving_avg_window function to filter down the frame rate fluctuations
+    frm_time_list, meanfps = u.moving_avg_window(frm_time_list, avg_window, currfps)
+
+    # assign the current time to the previous frame time
     prev_frame_time = new_frame_time
 
-    # converting the fps into integer
-    fps = int(fps)
-
-    # converting the fps to string so that we can display it on frame
-    # by using putText function
-    sFps = str(f"Frame rate: {fps} fps")
-    # =======================
-    # $$$$ END OF NEW ADDITION$$$$
-
     # Convert video frame from 16-bit to 14-bit format array
-    # Comment for a video file
     I = np.asarray(img0, dtype='>B').view(np.uint16) - 49152
-    img1 = np.reshape(img0, (-1, 640))
+    # Arrange the video frame data to two dimensional array with 640 elements in a row
+    img1 = np.reshape(I, (-1, 640))
 
     # Scale down the video data to 8-bit for visual representation
     # using a linear dynamic range compression mechanism
@@ -82,18 +75,25 @@ while True:
     data = data / data.max()
     gray = 255 * data
 
-    # $$$$ NEW ADDITION $$$$
-    # =======================
-    # putting the FPS count on the frame
-    cv2.putText(gray, sFps, (7, 70), font, 1, (100, 255, 0), 3, cv2.LINE_AA)
-    # =======================
-    # $$$$ END OF NEW ADDITION $$$$
+    # Update the video stats once in every second
+    if (toc - tic) >= 1.0:
 
-    # Display compressed video data
+        sFps = int(meanfps)
+        minval = np.min(img1)
+        maxval = np.max(img1)
+        meanval = round(np.mean(img1))
+
+        # update the tic seconds counter
+        tic = time.time()
+
+    # draw statistics data on the screen by calling drawtext function from utils.py
+    u.drawtext(gray, (10, 400), str(f"Frame rate: {sFps} fps"))
+    u.drawtext(gray, (10, 430),  str(f"min: {minval} DL <-> max: {maxval} DL."))
+    u.drawtext(gray, (10, 460),   str(f"Frame mean: {meanval} DL."))
+    u.drawtext(gray, (10, 20), "Press 'Q' key to terminate")
+
+    # Display compressed video data with the OSD text
     cv2.imshow('frame0', gray.astype('uint8'))
-
-    # Print the minimum and the maximum pixel value - 14-bit value
-    cv2.putText(gray, str(f"min: {img1.min()} <-> max: {img1.max()}"), (50, 70), font, 1, (100, 255, 0), 3, cv2.LINE_AA)
 
     # Exit the video displaying loop condition
     if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -102,3 +102,4 @@ while True:
 # release and destroy video acquisition device instance
 cam0.release()
 cv2.destroyAllWindows()
+
