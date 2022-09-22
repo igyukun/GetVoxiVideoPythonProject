@@ -15,8 +15,11 @@ def calculate_checksum():
         sum_dec = int(com_hex[i], 16) + sum_dec
 
     # calculate the checksum and represent it as an upper case Hex string without leading '0x'
-    checksum = format((~(sum_dec % 256) + 1 + 256), 'x').upper()
+    checksum = format((~(sum_dec % 256) + 1 + 256), 'X')
 
     # printout the results to the console
     print(f"checksum= {checksum}")
     print(f"Full command: {command} {checksum}")
+
+
+calculate_checksum()
