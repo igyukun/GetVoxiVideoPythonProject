@@ -8,21 +8,6 @@ import numpy as np
 import time
 import utils as u
 
-
-def draw_stats(fps, min_val, max_val, mean_val):
-    """
-    Draws video stats as a text on top of the video frame
-    :param fps:         video frame rate
-    :param min_val:     video array minimum
-    :param max_val:     video array maximum
-    :param mean_val:    video array mean
-    """
-    u.drawtext(gray, (10, 400), str(f"Frame rate: {fps} fps"))
-    u.drawtext(gray, (10, 430), str(f"min: {min_val} DL <-> max: {max_val} DL."))
-    u.drawtext(gray, (10, 460), str(f"Frame mean: {mean_val} DL."))
-    u.drawtext(gray, (10, 20), "Press 'Q' key to terminate")
-
-
 # used to record the time when we processed last frame
 prev_frame_time = 0
 
@@ -95,7 +80,7 @@ while cam0.isOpened():
         tic = time.time()
 
     # Draw the video statistics on top of the video frame (frame rate, minimum, maximum and mean values)
-    draw_stats(sFps, minval, maxval, meanval)
+    u.draw_stats(gray, sFps, minval, maxval, meanval)
 
     # Display compressed video data with the OSD text
     cv2.imshow('VOXI USB video', gray.astype('uint8'))

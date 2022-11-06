@@ -16,6 +16,21 @@ def drawtext(framedata, coords, text="No data", ):
     cv2.putText(framedata, text, coords, font, 1.2, (0, 0, 0), 2, cv2.FILLED)
 
 
+def draw_stats(gray, fps, min_val, max_val, mean_val):
+    """
+    Draws video stats as a text on top of the video frame
+    :param gray:        video array compressed by DRC
+    :param fps:         video frame rate
+    :param min_val:     video array minimum
+    :param max_val:     video array maximum
+    :param mean_val:    video array mean
+    """
+    drawtext(gray, (10, 400), str(f"Frame rate: {fps} fps"))
+    drawtext(gray, (10, 430), str(f"min: {min_val} DL <-> max: {max_val} DL."))
+    drawtext(gray, (10, 460), str(f"Frame mean: {mean_val} DL."))
+    drawtext(gray, (10, 20), "Press 'Q' key to terminate")
+
+
 def moving_avg_window (lst, windowsize, newval):
     """
     Calculates a simple moving average of the list.
