@@ -91,7 +91,7 @@ while cam0.isOpened():
     # Process the keypress events
     key = cv2.pollKey()
     # terminate application
-    if key == ord('q') or key == ord('Q') or cv2.getWindowProperty('VOXI USB video',cv2.WND_PROP_VISIBLE) == 0:
+    if key == ord('q') or key == ord('Q') or key == 27 or cv2.getWindowProperty('VOXI USB video',cv2.WND_PROP_VISIBLE) == 0:
         break
     # capture the current frame into a file
     if key == ord('c') or key == ord('C'):
