@@ -22,4 +22,4 @@ def calculate_checksum():
     print(f"Full command: {command} {checksum}")
 
 
-calculate_checksum()
+# calculate_checksum()

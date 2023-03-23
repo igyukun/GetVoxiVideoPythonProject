@@ -1,4 +1,4 @@
-    # Read and display the video stream from VOxI camera using the USB3 interface in Y
+# Read and display the video stream from VOxI camera using the USB3 interface in Y
 
 import calendar
 import cv2
@@ -6,17 +6,16 @@ import numpy as np
 import time
 from utils import *
 
-
 # The time of the last and the current frames
 prev_frame_time = 0
-new_frame_time  = 0
+new_frame_time = 0
 
 # video statistics globals:
-sFps    = 0   # frame rate string
-meanval = 0 # frame mean value
-minval  = 0  # frame minimum value
-maxval  = 0  # frame maximum value
-curfps  = 0
+sFps = 0  # frame rate string
+meanval = 0  # frame mean value
+minval = 0  # frame minimum value
+maxval = 0  # frame maximum value
+curfps = 0
 # seconds counter to be used for refreshing the stats data on the screen
 tic = time.time()
 toc = time.time()
@@ -26,9 +25,11 @@ avg_window = 400
 frm_time_list = [0]
 # OSD toggler
 toggleOSD = True
+# DRC toggler
+toggleDRC = True
 
 # Create a video capturing device instance
-cam0 = cv2.VideoCapture(0,cv2.CAP_DSHOW)
+cam0 = cv2.VideoCapture(0, cv2.CAP_DSHOW)
 
 # Convert the captured image to RGB
 cam0.set(cv2.CAP_PROP_CONVERT_RGB, 0)
@@ -62,14 +63,17 @@ while cam0.isOpened():
 
     # Scale down the video data from 16-bit to 14-bit format
     I = np.asarray(img0).view(np.uint16) - 49152
+    # Scale down the video data from 16-bit to 13-bit format (SPARROW)
+    # I = np.asarray(img0).view(np.uint16) - 57344
     # No need to convert the data type with the use of DSHOW video capturing
     # I = np.asarray(img0, dtype='>B').view(np.uint16) - 49152
 
     # Arrange the video frame data as two-dimensional array with 640 elements in a row
     img1 = np.reshape(I, (-1, 640))
 
-    # Apply a linear DRC to scale the video down from 14-bit to 8-bit
-    gray = linear_DRC(img1)
+    # Apply a linear DRC if toggleDRC is True to scale the video down from 14-bit to 8-bit
+    gray = linear_drc(img1) if toggleDRC else img1
+    # gray = img1
 
     # Update the video stats once a second
     if (toc - tic) >= 1.0:
@@ -86,12 +90,16 @@ while cam0.isOpened():
 
     # Display compressed video data with the OSD text
     cv2.namedWindow("VOXI USB video", cv2.WINDOW_NORMAL)
-    cv2.imshow('VOXI USB video', gray.astype('uint8'))
+    gray = gray.astype('uint8') if toggleDRC else img1
+    # cv2.imshow('VOXI USB video', gray.astype('uint8'))
+    # cv2.imshow('VOXI USB video', img1)
+    cv2.imshow('VOXI USB video', gray)
 
     # Process the keypress events
     key = cv2.pollKey()
     # terminate application
-    if key == ord('q') or key == ord('Q') or key == 27 or cv2.getWindowProperty('VOXI USB video',cv2.WND_PROP_VISIBLE) == 0:
+    if key == ord('q') or key == ord('Q') or key == 27 or \
+            cv2.getWindowProperty('VOXI USB video', cv2.WND_PROP_VISIBLE) == 0:
         break
     # capture the current frame into a file
     if key == ord('c') or key == ord('C'):
@@ -108,8 +116,14 @@ while cam0.isOpened():
         else:
             toggleOSD = True
 
+        # press 'd' key to toggle the DRC on and off
+    if key == ord('d') or key == ord('D'):
+        toggleDRC = True if not toggleDRC else False
+        # if toggleOSD:
+        #     toggleOSD = False
+        # else:
+        #     toggleOSD = True
+
 # release and destroy video acquisition device instance
 cam0.release()
 cv2.destroyAllWindows()
-
-
