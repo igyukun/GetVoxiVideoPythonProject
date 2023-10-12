@@ -1,72 +1,55 @@
 import serial
 
 
-# Calculates SCD detector or video engine (e.g. VOxI) command checksum
-def calculate_checksum():
+def create_voxi_command(command_string):
+    """
+    Reseive the string command, calculate the checksum and create the bytearray ready to be written onto the serial port
+    :param command_string: the command including header, OpCode, data block size and the data block itself in a string representation, where each byte is separated by whitespaces.
+                           e.g. "aa 16 85 04 00 1f 00 00 00"
+    :return: bytearray, including the hex formatted command with the calculated checksum
+    """
 
-    # command including header, OpCode, data block size and the data block itself
-    command = 'aa 16 85 04 00 1f 00 00 00'
     # split the command string into individual bytes
-    com_hex = command.split()
+    command_list = command_string.split()
     # sum of all bytes in decimal scale
     sum_dec = 0
+    # create an empty bytearray
+    command_byte_array = bytearray()
 
-    for i in range(len(com_hex)):
+    for i in range(len(command_list)):
         # iterate through the list of bytes and calculate the sum
-        sum_dec = int(com_hex[i], 16) + sum_dec
+        sum_dec = int(command_list[i], 16) + sum_dec
+        # append each byte to the byte array
+        command_byte_array.append(int('0x'+command_list[i],16))
 
     # calculate the checksum and represent it as an upper case Hex string without leading '0x'
-    checksum = format((~(sum_dec % 256) + 1 + 256), 'X')
-
+    checksum = format((~(sum_dec % 256) + 1 + 256), 'x')
+    # append the checksum to the byte array
+    command_byte_array.append(int('0x'+ checksum, 16))
     # printout the results to the console
     print(f"checksum byte: {checksum}")
-    print(f"Full command: {command} {checksum}")
+    print(f"Full command: {command_byte_array}")
 
+    return command_byte_array
 
-def sendSerialCommand(port, baudrate, command):
+def send_serial_command(port, baudrate, command):
     """
     sendSerialCommand receives a serial connection parameters and writes a bytearray command to the port using 'serial' package
-    :param port:        'COMX' for Windows or something like '/dev/ttyUSB0' for Linux
+    :param port:        'COMX' for Windows, e.g. 'COM4'
+                        device name for Linux, e.g: '/dev/ttyUSB0'
     :param baudrate:    Communication baud rate as defined in the VOXI configuration (default is 115200)
     :param command:     VOXI Command represented as bytearray
     :return:
     """
+    #open the communication
     serialPort = serial.Serial(port=port, baudrate=baudrate, bytesize=8, write_timeout=2, timeout=2, stopbits=serial.STOPBITS_ONE, parity=serial.PARITY_NONE)
-    serialPort.write (command)
-
-    commandReply = ''  # Used to hold data coming over UART
-    serialPort.flush()
-    while 1:
-        commandReply = serialPort.readline()
-        # Wait until there is data waiting in the serial buffer
-        if serialPort.in_waiting > 0:
-
-            # Read data out of the buffer until a carraige return / new line is found
-
-
-            # Print the contents of the serial data
-            if commandReply == '':
-                serialPort.close()
-                return "ERROR: NUC operation failed!"
-        else:
-            break
-
+    # write the command onto the port
+    serialPort.write (create_voxi_command((command)))
+    #close the port
     serialPort.close()
 
-def createNUCcmd ():
-    packet = bytearray()
-    packet.append(0xAA)
-    packet.append(0x16)
-    packet.append(0x85)
-    packet.append(0x04)
-    packet.append(0x00)
-    packet.append(0x10)
-    packet.append(0x00)
-    packet.append(0x00)
-    packet.append(0x00)
-    packet.append(0xA7)
-    return packet
 
 if __name__ == '__main__':
-    calculate_checksum()
 
+    command = 'aa 16 85 04 00 1f 00 00 00'
+    send_serial_command('COM4',115200, command)

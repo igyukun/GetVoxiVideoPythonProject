@@ -20,6 +20,7 @@ currfps = 0
 
 comPort = 'COM4'
 comBaudrate = 115200
+nuc_command = 'aa 16 85 04 00 1f 00 00 00'
 
 # seconds counter to be used for refreshing the stats data on the screen
 tic = time.time()
@@ -126,7 +127,7 @@ while cam0.isOpened():
 
     #press 'n' key to perform 1-point NUC
     if key == ord('n') or key == ord('N'):
-        print(communication.sendSerialCommand(comPort, comBaudrate, communication.createNUCcmd()))
+        print(communication.send_serial_command(comPort, comBaudrate, nuc_command))
 
 # release and destroy video acquisition device instance
 cam0.release()
