@@ -1,10 +1,11 @@
 # Read and display the video stream from VOxI camera using the USB3 interface in Y
 
 import calendar
+import communication
 import cv2
 import numpy as np
 import time
-from utils import *
+from utils import linear_drc, moving_avg_window, draw_stats, draw_histogram, drawErr
 
 # The time of the last and the current frames
 prev_frame_time = 0
@@ -15,7 +16,11 @@ sFps = 0  # frame rate string
 meanval = 0  # frame mean value
 minval = 0  # frame minimum value
 maxval = 0  # frame maximum value
-curfps = 0
+currfps = 0
+
+comPort = 'COM4'
+comBaudrate = 115200
+
 # seconds counter to be used for refreshing the stats data on the screen
 tic = time.time()
 toc = time.time()
@@ -52,7 +57,7 @@ while cam0.isOpened():
 
     # Calculate the fps and round the result to the closest integer
     # the condition is set to prevent the division by '0' error
-    if not new_frame_time == prev_frame_time:
+    if new_frame_time != prev_frame_time:
         currfps = round(1 / (new_frame_time - prev_frame_time))
 
     # Call utils.moving_avg_window function to filter down the frame rate fluctuations
@@ -73,14 +78,13 @@ while cam0.isOpened():
 
     # Apply a linear DRC if toggleDRC is True to scale the video down from 14-bit to 8-bit
     gray = linear_drc(img1) if toggleDRC else img1
-    # gray = img1
 
     # Update the video stats once a second
     if (toc - tic) >= 1.0:
         sFps = int(meanfps)
         minval = np.min(img1)
         maxval = np.max(img1)
-        meanval = round(np.mean(img1))
+        meanval = np.mean(img1, dtype='uint64')
         # update the tic seconds counter
         tic = time.time()
 
@@ -116,14 +120,16 @@ while cam0.isOpened():
         else:
             toggleOSD = True
 
-        # press 'd' key to toggle the DRC on and off
+    # press 'd' key to toggle the DRC on and off
     if key == ord('d') or key == ord('D'):
         toggleDRC = True if not toggleDRC else False
-        # if toggleOSD:
-        #     toggleOSD = False
-        # else:
-        #     toggleOSD = True
+
+    #press 'n' key to perform 1-point NUC
+    if key == ord('n') or key == ord('N'):
+        print(communication.sendSerialCommand(comPort, comBaudrate, communication.createNUCcmd()))
 
 # release and destroy video acquisition device instance
 cam0.release()
 cv2.destroyAllWindows()
+
+

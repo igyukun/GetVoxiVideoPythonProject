@@ -1,4 +1,4 @@
-import cv2
+import cv2 as cv2
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -16,8 +16,8 @@ def drawtext(framedata, coords, text="No data", ):
 
     # put thin black text on top of white thick text to get the text visible on any background
 
-    cv2.putText(framedata, text, coords, font, 0.5, (0, 0, 0), 2, cv2.LINE_AA)
-    cv2.putText(framedata, text, coords, font, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
+    cv2.putText(framedata, text, coords, font, 0.4, (0, 0, 0), 2, cv2.LINE_AA)
+    cv2.putText(framedata, text, coords, font, 0.4, (255, 255, 255), 1, cv2.LINE_AA)
 
 
 def draw_stats(gray, fps, min_val, max_val, mean_val):
@@ -38,7 +38,10 @@ def draw_stats(gray, fps, min_val, max_val, mean_val):
     drawtext(gray, (10, 80), "'P/p' - pause and plot")
     drawtext(gray, (10, 110), "'O/o' - toggle OSD")
     drawtext(gray, (10, 140), "'D/d' - toggle DRC")
+    drawtext(gray, (10, 170), "'N/n' - Execute 1-Point NUC")
 
+def drawErr (gray, errorMsg):
+    drawtext(gray, (500, 200), errorMsg)
 
 def draw_histogram(img, minval, maxval):
     """
